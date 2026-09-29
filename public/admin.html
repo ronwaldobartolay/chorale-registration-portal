@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin | Tinig Batangan</title><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="admin-wrap">
+<header class="admin-head"><div><div class="badge">ADMIN PORTAL</div><h1>Tinig Batangan</h1></div><button id="logout" class="ghost">Logout</button></header>
+<section id="login" class="card narrow">
+ <h2>Administrator Login</h2><div id="loginError" class="notice error hidden"></div>
+ <form id="loginForm"><label>Username</label><input name="username" required>
+ <label>Password</label><input name="password" type="password" required>
+ <button class="primary">Sign in</button></form>
+</section>
+<section id="dashboard" class="hidden">
+ <div class="stats"><div class="stat"><small>Total Registered</small><strong id="total">0</strong></div></div>
+ <div class="toolbar"><input id="search" placeholder="Search names or contact..." /><select id="filterCategory"><option value="">All voices</option><option>Soprano</option><option>Alto</option><option>Tenor</option><option>Bass</option><option>Other</option></select><button id="export" class="secondary">Export CSV</button></div>
+ <div class="table-card"><table><thead><tr><th>ID</th><th>Name</th><th>Zone</th><th>Voice</th><th>Contact</th><th>Registered</th><th>Actions</th></tr></thead><tbody id="tbody"></tbody></table></div>
+</section>
+</div>
+<script>
+const $=s=>document.querySelector(s);
+async function api(url,opt={}){const r=await fetch(url,opt);const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Request failed');return j;}
+async function check(){try{await api('/api/me');$('#login').classList.add('hidden');$('#dashboard').classList.remove('hidden');load();}catch{}}
+async function load(){
+ const q=encodeURIComponent($('#search').value), c=encodeURIComponent($('#filterCategory').value);
+ const j=await api('/api/registrations?q='+q+'&category='+c); $('#total').textContent=j.total;
+ $('#tbody').innerHTML=j.rows.map(r=>`<tr>
+ <td>${r.id}</td><td><b>${esc(r.full_name)}</b></td><td>${esc(r.zone)}</td><td>${esc(r.category)}</td><td>${esc(r.contact_number)}</td><td>${new Date(r.created_at+'Z').toLocaleString()}</td>
+ <td><button class="small edit" data-id="${r.id}">Edit</button> <button class="small danger del" data-id="${r.id}">Delete</button></td>
+ </tr>`).join('');
+}
+function esc(x){return String(x??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+$('#loginForm').addEventListener('submit',async e=>{e.preventDefault();try{await api('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.fromEntries(new FormData(e.target)))});location.reload();}catch(err){$('#loginError').textContent=err.message;$('#loginError').classList.remove('hidden');}});
+$('#logout').onclick=async()=>{await api('/api/logout',{method:'POST'});location.reload();};
+$('#search').oninput=load;$('#filterCategory').onchange=load;$('#export').onclick=()=>location.href='/api/export.csv';
+$('#tbody').onclick=async e=>{
+ const id=e.target.dataset.id;if(!id)return;
+ if(e.target.classList.contains('del')){if(confirm('Delete this registration?')){await api('/api/registrations/'+id,{method:'DELETE'});load();}}
+ if(e.target.classList.contains('edit')){const tr=e.target.closest('tr');const cells=tr.children;
+ const name=prompt('Full name:',cells[1].innerText);if(name===null)return;
+ const zone=prompt('Zone:',cells[2].innerText);const category=prompt('Voice category:',cells[3].innerText);const contact=prompt('Contact number:',cells[4].innerText);
+ await api('/api/registrations/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({full_name:name,zone,category,contact_number:contact})});load();}
+};
+check();
+</script>
+</body></html>

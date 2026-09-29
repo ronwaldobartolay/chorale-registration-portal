@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tinig Batangan | Registration Portal</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="page">
+<header class="hero">
+  <div class="badge">REGISTRATION PORTAL</div>
+  <h1>Tinig Batangan</h1>
+  <p>Chorale Registration</p>
+</header>
+<main class="card">
+  <div id="success" class="notice success hidden">Registration saved successfully.</div>
+  <div id="error" class="notice error hidden"></div>
+  <form id="regForm">
+    <label>Full Name <span>*</span></label>
+    <input id="full_name" name="full_name" required maxlength="120" placeholder="Enter full name">
+
+    <label>Zone</label>
+    <select id="zone" name="zone">
+      <option value="">Select Zone</option>
+      <option>Zone 1</option><option>Zone 2</option><option>Zone 3</option>
+      <option>Zone 4</option><option>Zone 5</option><option>Zone 6</option>
+      <option>Zone 7</option><option>Zone 8</option><option>Zone 9</option>
+      <option>Zone 10</option>
+    </select>
+
+    <label>Voice Category</label>
+    <select id="category" name="category">
+      <option value="">Select voice</option>
+      <option>Soprano</option><option>Alto</option><option>Tenor</option><option>Bass</option>
+      <option>Other</option>
+    </select>
+
+    <label>Contact Number</label>
+    <input id="contact_number" name="contact_number" maxlength="40" placeholder="Optional">
+
+    <button class="primary" type="submit">Register</button>
+  </form>
+</main>
+<footer><a href="/admin">Admin Portal</a></footer>
+</div>
+<script>
+const form=document.getElementById('regForm');
+form.addEventListener('submit',async e=>{
+ e.preventDefault();
+ const data=Object.fromEntries(new FormData(form));
+ document.getElementById('success').classList.add('hidden');
+ document.getElementById('error').classList.add('hidden');
+ const r=await fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+ const j=await r.json();
+ if(!r.ok){document.getElementById('error').textContent=j.error||'Unable to register.';document.getElementById('error').classList.remove('hidden');return;}
+ form.reset(); document.getElementById('success').classList.remove('hidden');
+});
+</script>
+</body></html>
